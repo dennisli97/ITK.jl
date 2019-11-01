@@ -49,7 +49,7 @@ function registerframe(fixedImage::String, movingImage::String, outputImage::Str
 end
 
 """
-    MMIGradientRegistration(fixedImage, movingImage, outputImage, writeImage, learningRate, minStepLength, maxIterations, relaxationFactor) 
+    MMIGradientRegistration(fixedImage, movingImage, outputImage, writeImage, learningRate, minStepLength, maxIterations, relaxationFactor)
 
 Register movingImage to fixedImage with Mattes Mutual Information metric and Regular Step Gradient Descent optimizer.
 
@@ -147,10 +147,38 @@ function MeanSquaresGradientRegistration(fixedImage::String, movingImage::String
     return x, y, metric
 end
 
+"""
+NormalizedMutualInformationHistogramImageToImageMetric(fixedImage, movingImage, outputImage, writeImage, learningRate, minStepLength, maxIterations, relaxationFactor)
+
+Register movingImage to fixedImage with mutual histogram and Regular Step Gradient Descent optimizer.
+
+# Arguments
+- `fixedImage::String`: path to fixed image file
+- `movingImage::String`: path to moving image file
+- `outputImage::String`: path to desired output image file
+- `writeImage::Bool`: whether or not to save the output image file
+- `learningRate::Float64`: higher values result in quicker but potentially unstable registration (recommended range 1.0:5.0)
+- `minStepLength::Float64`: step size (recommended range 0.001:0.05)
+- `maxIterations::Int64`: max number of iterations (recommended range 100:200)
+- `relaxationFactor::Float64`: factor to slow down shift between iterations, higher values result in quicker, potentially unstable registration (recommended range 0.3:0.7)
+
+# Returns
+- (x translation, y translation, metric information)
+"""
+function NormalizedMIHImageToImageMetric(fixedImage::String, movingImage::String, outputImage::String, writeImage::Bool, learningRate::Float64, minStepLength::Float64, maxIterations::Int64, relaxationFactor::Float64)
+    register(fix::Ptr{UInt8}, moving::Ptr{UInt8}, output::Ptr{UInt8}, write::Bool, LR::Float64, minStep::Float64, maxIter::Int64, relaxFactor::Float64) = @cxx NormalizedMutualInformationHistogramImageToImageMetric(fix, moving, output, write, LR, minStep, maxIter, relaxFactor)
+    result = register(pointer(fixedImage), pointer(movingImage), pointer(outputImage), writeImage, learningRate, minStepLength, maxIterations, relaxationFactor)
+    x, y, metric = unsafe_load(result, 1), unsafe_load(result, 2), unsafe_load(result, 3)
+    return x, y, metric
+end
+
+
+
 export registerframe
 export MMIGradientRegistration
 export MMIAmoebaRegistration
 export MMIOnePlusOneRegistration
 export MeanSquaresGradientRegistration
+export NormalizedMIHImageToImageMetric
 
 end # module ITK
